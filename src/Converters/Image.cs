@@ -13,6 +13,9 @@ internal class Image() : BaseConverter("img", "image")
         var altText = htmlInput.Attributes["alt"].Value;
         var source = htmlInput.Attributes["src"].Value;
 
+        // Attempt to download.
+        converter.DownloadAsset(source, new Uri(converter.Url, source));
+        
         string? lightBoxUrl = null;
         var parentNode = htmlInput.ParentNode;
         if (parentNode.Name.Equals("a", StringComparison.InvariantCultureIgnoreCase))
