@@ -122,24 +122,6 @@ public class DocsConverter(string rootFolder, Uri url)
         // Ignore if it's a full URL.
         if (source.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return;
-        
-        // Try to massage source.
-        source = source.Replace('\\', '/').ToLower();
-        if (source.StartsWith("./"))
-            source = source[2..];
-        else if (source.StartsWith('/'))
-            source = source[1..];
-        else if (source.StartsWith("../"))
-        {
-            // Special case
-            var sections = source.ToLower().Split('/');
-            int start = _moduleName != null 
-                ? Array.IndexOf(sections, _moduleName)+1
-                : 0;
-            while (sections[start] == "..")
-                start++;
-            source = string.Join('/', sections, start, sections.Length - start);
-        }
 
         // Do a filename check BEFORE the async download.
         var filename = Path.Combine(_rootFolder, source);
@@ -157,9 +139,16 @@ public class DocsConverter(string rootFolder, Uri url)
         var isImage = Array.IndexOf(ImageExtensions, Path.GetExtension(filename).ToLower()) >= 0;
         CreatedFiles.Add(new FileEntry(filename, isImage ? FileType.Image : FileType.Asset));
 
-        using var client = new HttpClient();
-        await using var stm = await client.GetStreamAsync(assetUrl);
-        await using var file = File.Create(filename);
-        await stm.CopyToAsync(file);
+        try
+        {
+            using var client = new HttpClient();
+            await using var stm = await client.GetStreamAsync(assetUrl);
+            await using var file = File.Create(filename);
+            await stm.CopyToAsync(file);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error downloading {assetUrl}: {ex.Message}");
+        }
     }
 }

@@ -55,7 +55,7 @@ public abstract class BaseMetadata : IDocsMetadata
 
     protected string EscapeYaml(string value)
     {
-        if (value.Contains('\n'))
+        if (value.Contains('\n') || value.TrimStart().StartsWith('-'))
             return $" |\n{string.Join('\n', value.Split('\n')
                 .Where(line => !string.IsNullOrWhiteSpace(line))
                 .Select(line => $"  {line}"))}";
