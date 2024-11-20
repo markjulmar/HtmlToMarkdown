@@ -38,6 +38,17 @@ public abstract class BaseMetadata : IDocsMetadata
                     sb.AppendLine($"{key}: {EscapeYaml(value)}");
                 }
             }
+
+            var msCollection = LoadedValues.GetValueOrDefault("ms.collection");
+            if (!string.IsNullOrEmpty(msCollection))
+            {
+                sb.AppendLine("ms.collection:");
+                foreach (var item in msCollection.Split(','))
+                {
+                    sb.AppendLine($"  - {item.Trim()}");
+                }
+            }
+            
             return sb.ToString();
         }
     }
@@ -45,7 +56,9 @@ public abstract class BaseMetadata : IDocsMetadata
     protected string EscapeYaml(string value)
     {
         if (value.Contains('\n'))
-            return $" |\n{string.Join('\n', value.Split('\n').Select(line => $"  {line}"))}";
+            return $" |\n{string.Join('\n', value.Split('\n')
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Select(line => $"  {line}"))}";
         if (value.Contains(':'))
             return $"\"{value}\"";
         return value;

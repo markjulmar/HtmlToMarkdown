@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 
 namespace Julmar.DocsToMarkdown;
@@ -20,13 +21,13 @@ public class DocsConverter(string rootFolder, Uri url)
     private string? _moduleName;
     private string _rootFolder = rootFolder;
 
-    public async Task<IReadOnlyCollection<FileEntry>> ConvertAsync(Action<string>? logger = null)
+    public async Task<IReadOnlyCollection<FileEntry>> ConvertAsync(bool useExtensions = true, Action<string>? logger = null)
     {
         var converter = await IHtmlConverter.LoadAsync(url,
             new HtmlConverterOptions()
             {
-                UseDocfxExtensions = true,
-                UnhandledTagCallback = logger,
+                UseDocfxExtensions = useExtensions,
+                UnhandledTagCallback = logger ?? (t => Debug.WriteLine($"Unhandled tag: {t}")),
                 DownloadAsset = (href,assetUrl) => _downloadTasks.Add(OnDownloadAsset(href, assetUrl))
             });
 

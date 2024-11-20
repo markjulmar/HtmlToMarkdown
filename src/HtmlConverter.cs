@@ -51,6 +51,10 @@ internal sealed class HtmlConverter(Uri url, HtmlDocument htmlDocument, HtmlConv
     
     public IEnumerable<string> GetMarkdown()
     {
+        // No data for modules.
+        if (Metadata.PageKind == "module")
+            yield break;
+        
         var root = htmlDocument.DocumentNode.SelectSingleNode("//div[@class='content']") 
                    ?? htmlDocument.DocumentNode.SelectSingleNode("//div[@class='content ']");
         if (root == null)

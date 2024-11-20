@@ -16,6 +16,7 @@ public sealed class ModuleMetadata : BaseMetadata
     public static async Task<IDocsMetadata> Create(HtmlDocument document)
     {
         var metadata = new ModuleMetadata(document);
+        metadata.FillInFromPageData(document);
         await metadata.FillInFromLearnApi();
         return metadata;
     }
@@ -33,6 +34,33 @@ public sealed class ModuleMetadata : BaseMetadata
         
         if (modules.Count == 1)
             _catalogMetadata = modules[0];
+    }
+
+    private void FillInFromPageData(HtmlDocument htmlDocument)
+    {
+        var converter = new HtmlConverter(new Uri("https://localhost"), htmlDocument, null);
+
+        var allDivs = htmlDocument.DocumentNode
+            .SelectNodes("//div").ToList();
+
+        var summaryNode = allDivs.SingleOrDefault(n => n.GetClasses().Contains("learn-summary"));
+        if (summaryNode != null)
+        {
+            LoadedValues.Add("summary", converter.Convert(summaryNode).TrimEnd('\r', '\n', ' '));
+        }
+
+        var abstractNode = allDivs.SingleOrDefault(n => n.GetClasses().Contains("abstract"));
+        if (abstractNode != null)
+        {
+            LoadedValues.Add("abstract", converter.Convert(abstractNode).TrimEnd('\r', '\n', ' '));
+        }
+
+        var prerequisitesNode = allDivs.SingleOrDefault(n => n.GetClasses().Contains("prerequisites"));
+        if (prerequisitesNode != null)
+        {
+            prerequisitesNode.Element("h2")?.Remove(); // remove any header
+            LoadedValues.Add("prerequisites", converter.Convert(prerequisitesNode).TrimEnd('\r', '\n', ' '));
+        }
     }
 
     private static readonly string[] MetadataNames =
@@ -67,16 +95,38 @@ public sealed class ModuleMetadata : BaseMetadata
                     && !string.IsNullOrWhiteSpace(value))
                     sb.AppendLine($"  {key}: {EscapeYaml(value)}");
             }
+            
+            var msCollection = LoadedValues.GetValueOrDefault("ms.collection");
+            if (!string.IsNullOrEmpty(msCollection))
+            {
+                sb.AppendLine("  ms.collection:");
+                foreach (var item in msCollection.Split(','))
+                {
+                    sb.AppendLine($"    - {item.Trim()}");
+                }
+            }
 
             var title = LoadedValues.GetValueOrDefault("title");
             if (!string.IsNullOrWhiteSpace(title))
                 sb.AppendLine($"title: {EscapeYaml(title)}");
+
+            var summary = LoadedValues.GetValueOrDefault("summary")
+                          ?? _catalogMetadata?.Summary;
+            if (!string.IsNullOrEmpty(summary))
+                sb.AppendLine($"summary: {EscapeYaml(summary)}");
+            
+            var @abstract = LoadedValues.GetValueOrDefault("abstract");
+            if (!string.IsNullOrEmpty(@abstract))
+                sb.AppendLine($"abstract: {EscapeYaml(@abstract)}");
+                          
+            var prerequisites = LoadedValues.GetValueOrDefault("prerequisites");
+            if (!string.IsNullOrEmpty(prerequisites))
+                sb.AppendLine($"prerequisites: {EscapeYaml(prerequisites)}");
             
             if (_catalogMetadata != null)
             {
                 const string prefix = @"https://learn.microsoft.com/en-us/";
-                sb.AppendLine($"summary: {EscapeYaml(_catalogMetadata.Summary)}")
-                  .AppendLine($"iconUrl: /{_catalogMetadata.IconUrl[prefix.Length..]}");
+                sb.AppendLine($"iconUrl: /{_catalogMetadata.IconUrl[prefix.Length..]}");
                 if (_catalogMetadata.Levels.Count > 0)
                 {
                     sb.AppendLine("levels:");
