@@ -70,13 +70,13 @@ public sealed class ModuleMetadata : BaseMetadata
 
             var title = LoadedValues.GetValueOrDefault("title");
             if (!string.IsNullOrWhiteSpace(title))
-                sb.AppendLine($"title: {title}");
+                sb.AppendLine($"title: {EscapeYaml(title)}");
             
             if (_catalogMetadata != null)
             {
                 const string prefix = @"https://learn.microsoft.com/en-us/";
-                sb.AppendLine($"summary: {_catalogMetadata.Summary}");
-                sb.AppendLine("iconUrl: " + _catalogMetadata.IconUrl[prefix.Length..]);
+                sb.AppendLine($"summary: {EscapeYaml(_catalogMetadata.Summary)}")
+                  .AppendLine($"iconUrl: /{_catalogMetadata.IconUrl[prefix.Length..]}");
                 if (_catalogMetadata.Levels.Count > 0)
                 {
                     sb.AppendLine("levels:");
@@ -113,7 +113,7 @@ public sealed class ModuleMetadata : BaseMetadata
                 }
 
                 if (!string.IsNullOrWhiteSpace(id))
-                    sb.AppendLine($"badge: {id}.badge");
+                    sb.AppendLine($"badge:").AppendLine($"  uid: {id}.badge");
             }
 
             return sb.ToString();

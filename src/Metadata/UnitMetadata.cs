@@ -65,7 +65,7 @@ public class UnitMetadata : BaseMetadata
                 sb.AppendLine($"uid: {id}");
             var title = LoadedValues.GetValueOrDefault("title");
             if (!string.IsNullOrWhiteSpace(title))
-                sb.AppendLine($"title: {title}");
+                sb.AppendLine($"title: {EscapeYaml(title)}");
             sb.AppendLine("metadata:");
             foreach (var name in MetadataNames)
             {
